@@ -2,4 +2,4 @@
 
 # php index.php 
 
-![Screenshot of the App](./screenshot.png)
+![Screenshot of the App](./Screenshot.png)

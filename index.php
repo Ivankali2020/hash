@@ -1,6 +1,6 @@
 <?php 
 
-include_once('rsa.php');
+require 'block.php';
 
 function decorationText($text,$line = 30){
     echo "\033[34m" . str_repeat("=", $line) . "\033[0m\n"; // Blue line separator
@@ -8,11 +8,20 @@ function decorationText($text,$line = 30){
     echo "\033[34m" . str_repeat("=", $line) . "\033[0m\n"; //
 }
 
+$myBlockChain = new Blockchain();
+
 $loop = true;
 while($loop){
    
-    decorationText('RSA Encryption And Decryption And MD5 and SHA1',50);
-    echo " Type 1 for all hash \n Type 2 for custom hash \n Type 3 for generate RSA keys:  \n Type 4 for encrypt RSA keys:  \n Type 5 for decrypt RSA keys:  \n Type 6 for exit \n";
+
+    $titles = ['Show All Chains', 'Add Block', 'Change Difficulty', 'Check Valid Chain', 'Exit'];
+
+    foreach($titles as $key => $value){
+        echo "\n";
+        echo $key + 1 . ". " . $value . "\n";
+    }
+    echo "\n";
+    echo "Choose Option : ";
 
     fscanf(STDIN, "%s\n", $type);
 
@@ -23,12 +32,11 @@ while($loop){
     }
 
     match ((int)$type) {
-        1 => hashAllData(),
-        2 => customHash(),
-        3 => outputRsaKeys(),
-        4 => encryptOutMessage(),
-        5 => decrptyOutMessage(),
-        6 => exitWhile(),
+        1 => showAllChain(),
+        2 => addBLock(),
+        3 => changeDifficulty(),
+        4 => isChainValid(),
+        5 => exitWhile(),
     };
 }
 
@@ -37,90 +45,51 @@ function exitWhile(){
     $loop  = false;
 }
 
-$keysStoresGloble; 
-function outputRsaKeys(){
-    global $keysStoresGloble; 
-    list($publicKey, $privateKey) = generateKeys();
-
-    $keysStoresGloble['privateKey'] = $privateKey; // Store private key
-    $keysStoresGloble['publicKey'] = $publicKey; 
-    echo "Private Key: \n" . $keysStoresGloble['privateKey'] . "\n";
-    echo "Public Key: \n" . $keysStoresGloble['publicKey'] . "\n";
-
-}
-
-function encryptOutMessage()
+function isChainValid()
 {
-    global $keysStoresGloble; 
+    global $myBlockChain;
 
-    if (!$keysStoresGloble['publicKey']) {
-        decorationText("Please generate RSA keys first.",0);
-        return;
+    if($myBlockChain->isChainValid()){
+        echo decorationText('Chain is valid',20);
+    }else{
+        echo decorationText('Chain Not valid',20);
     }
-    
-    echo 'Write Message To Encrypt : ';
-    fscanf(STDIN, "%s\n", $message);
-
-    if($message == null){
-        decorationText('Something went wrong',0);
-        return;
-    }
-
-    $encryptData = encryptRsaKey($keysStoresGloble['publicKey'],$message);
-
-    decorationText('Encrypted Message',0);
-    decorationText($encryptData,0);
 }
 
-function decrptyOutMessage()
-{
-    global $keysStoresGloble; 
-
-    if (!$keysStoresGloble['privateKey']) {
-        decorationText("Please generate RSA keys first.",0);
-        return;
-    }
-
-    echo 'Enter Encrypt Hash : ';
-    fscanf(STDIN, "%s\n", $message);
-
-    if($message == null){
-        decorationText('Something went wrong',0);
-        return;
-    }
-
-    $descryptMessage = decryptRsaKey($keysStoresGloble['privateKey'],$message);
-    
-    decorationText('Descrypted Message',0);
-    decorationText($descryptMessage,0);
+function changeDifficulty(){
+    global $myBlockChain;
+    echo "Enter new difficulty: ";
+    fscanf(STDIN, "%s\n", $difficulty);
+    $myBlockChain->difficulty = $difficulty;
+    echo "Changed difficulty to " . $myBlockChain->difficulty . "\n";
 }
 
+function addBlock(){
+    global $myBlockChain;
 
-
-function hashAllData(){
-    $array = ['Hello','Hello World','Hello World1','Hello World!','Hello World Now'];
-    
-    
-    foreach($array as $arr){
-        printOutMessage($arr);
-    }
-    
-}
-
-function customHash() {
-    echo "Enter value: ";
-    fscanf(STDIN, "%s\n", $input);
-    printOutMessage($input);
-}
-
-function printOutMessage($value){
+    echo decorationText('Sender Name',20);
     echo "\n";
-    echo "MD5 : ";
-    echo  "\033[1;32m" . md5($value) . "\033[0m\n";
+    fscanf(STDIN, "%s\n", $senderName);
+    echo decorationText('Receiver Name',20);
     echo "\n";
-    echo "SHA 1 : ";
-    echo  "\033[1;32m" . sha1($value) . "\033[0m\n";
+    fscanf(STDIN, "%s\n", $receiverName);
+    echo decorationText('Amount',20);
     echo "\n";
+    fscanf(STDIN, "%s\n", $amount);
+
+    $myBlockChain->addBlock(new Block(count($myBlockChain->chain), time(), ['sender' => $senderName, 'recipient' => $receiverName, 'amount' => $amount]));
 }
 
+function showAllChain(){
+    global $myBlockChain;
+    echo "Displaying the blockchain:\n";
 
+    foreach ($myBlockChain->chain as $block) {
+        echo "-------------------\n";
+        echo "Block #" . $block->index . "\n";
+        echo "Hash: " . $block->hash . "\n";
+        echo "Previous Hash: " . $block->previousHash . "\n";
+        echo "Transactions: " . json_encode($block->transactions) . "\n";
+        echo "-------------------\n";
+    }
+}
